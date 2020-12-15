@@ -1,15 +1,17 @@
-ifneq ($(KERNELRELEASE),)
-	obj-m := rtk_btusb.o
-	rtk_btusb-y = rtk_coex.o rtk_bt.o
-else
-	PWD := $(shell pwd)
-	KVER := $(shell uname -r)
-	KDIR := /lib/modules/$(KVER)/build
+ARCH=arm64
+KDIR = $(HOME)/gitlab/baikal-m/kernel
+CROSS = $(HOME)/toolchains/aarch64-unknown-linux-gnueabi/bin/aarch64-unknown-linux-gnueabi-
+NCPU := $(shell nproc)
+B_DIR = $(CURDIR)/build
+DEFCONFIG = mitx_defconfig
 
-all:
-	$(MAKE) -C $(KDIR) M=$(PWD) modules
+prepkernel: 
+	mkdir -p $(B_DIR)
+	$(MAKE) O=$(B_DIR) ARCH=${ARCH} CROSS_COMPILE=$(CROSS) -C $(KDIR) $(DEFCONFIG)
+	$(MAKE) O=$(B_DIR) -j$(NCPU) ARCH=${ARCH} CROSS_COMPILE=$(CROSS) -C $(KDIR) 
+
+driver: prepkernel
+	$(MAKE) O=$(B_DIR) ARCH=${ARCH} CROSS_COMPILE=$(CROSS) -C $(KDIR) M=$(CURDIR)
 
 clean:
-	rm -rf *.o *.mod.c *.mod.o *.ko *.symvers *.order *.a
-
-endif
+	make O=$(B_DIR) -C $(KDIR) M=$(CURDIR) clean

@@ -1,0 +1,2 @@
+obj-m := rtk_btusb.o
+rtk_btusb-y = rtk_coex.o rtk_bt.o
