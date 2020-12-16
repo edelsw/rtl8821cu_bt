@@ -1,4 +1,4 @@
-Cross-building the github driver rtk_bt_usb
+Cross-building the github driver rtk_btusb
 ===========================================
 
 $ cd bluetooth_usb_driver
@@ -42,11 +42,36 @@ Discover and ping the other device:
 hcitool scan
 l2ping <MAC address of the paired device>
 
+Building the module natively with linux-headers installed on target
+===================================================================
+
+On target install the linux-headers and other kernel deb packages for your
+kernel:
+
+linux-firmware-image-4.9.229-bm-gf2b0e6748867-dirty_4.9.229-bm-gf2b0e6748867-dirty-1_arm64.deb
+linux-headers-4.9.229-bm-gf2b0e6748867-dirty_4.9.229-bm-gf2b0e6748867-dirty-1_arm64.deb
+linux-image-4.9.229-bm-gf2b0e6748867-dirty_4.9.229-bm-gf2b0e6748867-dirty-1_arm64.deb
+linux-libc-dev_4.9.229-bm-gf2b0e6748867-dirty-1_arm64.deb
+
+When the kernel deb package linux-headers is cross-built on x86 host, due to a
+bug in deb-pkg, fixdep is included from host instead of the target. This is a
+known problem. This will lead to the error "fixdep: Exec format error" when you
+build the external module on target. Use the following patch to rebuild fixdep
+and other tools on target after linux-headers is installed:
+ 
+$ sudo apt-get install -y build-essential bc bison flex libssl-dev
+$ cd /usr/src/linux-headers-`uname -r`
+$ sudo patch -p1 < /tmp/headers-debian-byteshift.patch
+$ sudo make scripts
+
+$ cd bluetooth_usb_driver
+$ make -f Makefile.native
+
 How to use the stock kernel btusb driver
 ========================================
 
-Instead of using the github driver, you can modify and use the kernel's standard btusb
-driver. See btrtl.patch
+Instead of using the github driver, you can modify and use the kernel's standard
+btusb driver. See btrtl.patch
 
 Remove btusb driver from /etc/modprobe.d/blacklist.conf
 Remove the rtk_btusb.ko driver, if you installed it above.
