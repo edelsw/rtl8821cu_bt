@@ -1,3 +1,6 @@
+This is the readme file from https://github.com/andydvsn/rtl8821cu_bt.git.
+Read README.baikal first.
+
 RTL8821CU BT Driver
 ====================
 

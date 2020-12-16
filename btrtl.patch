@@ -1,0 +1,47 @@
+This patch is for btusb kernel 4.9 driver to support RTL8821CU chip.
+
+The current kernel driver does not distinguish between different RTL chips that
+report the same LMP subversion. This is why it is necessary to overwrite the
+couple of firmware file names for the old RTL_ROM_LMP_8821A device assumed in
+btrtl.c.  The github rtk_btusb.c driver uses product ID as a differentiator for
+multiple chips with LMP version 0x8821. For some reason this is not done
+in the stock linux btusb/btrtl driver. The patch references the two firwmare files
+from the rtl8821cu_bt github project and assumes they are in
+/lib/firmware/rtl_bt/. The firmware names are so far not in conflict with
+the contents of the firmware-realtek debian package.
+
+diff --git a/drivers/bluetooth/btrtl.c b/drivers/bluetooth/btrtl.c
+index fc9b25703c67..5260af9d316d 100644
+--- a/drivers/bluetooth/btrtl.c
++++ b/drivers/bluetooth/btrtl.c
+@@ -88,6 +88,7 @@ static int rtl8723b_parse_firmware(struct hci_dev *hdev, u16 lmp_subver,
+ 		{ RTL_ROM_LMP_8821A, 2 },
+ 		{ RTL_ROM_LMP_8761A, 3 },
+ 		{ RTL_ROM_LMP_8822B, 8 },
++		{ RTL_ROM_LMP_8821A, 10 },
+ 	};
+ 
+ 	ret = rtl_read_rom_version(hdev, &rom_version);
+@@ -337,7 +338,8 @@ static int btrtl_setup_rtl8723b(struct hci_dev *hdev, u16 lmp_subver,
+ 		cfg_name = "rtl_bt/rtl8723b_config.bin";
+ 		break;
+ 	case RTL_ROM_LMP_8821A:
+-		cfg_name = "rtl_bt/rtl8821a_config.bin";
++//		cfg_name = "rtl_bt/rtl8821a_config.bin";
++		cfg_name = "rtl_bt/rtl8821cu_config.bin";
+ 		break;
+ 	case RTL_ROM_LMP_8761A:
+ 		cfg_name = "rtl_bt/rtl8761a_config.bin";
+@@ -452,8 +454,12 @@ int btrtl_setup_realtek(struct hci_dev *hdev)
+ 		return btrtl_setup_rtl8723b(hdev, lmp_subver,
+ 					    "rtl_bt/rtl8723b_fw.bin");
+ 	case RTL_ROM_LMP_8821A:
++		/*
+ 		return btrtl_setup_rtl8723b(hdev, lmp_subver,
+ 					    "rtl_bt/rtl8821a_fw.bin");
++						*/
++		return btrtl_setup_rtl8723b(hdev, lmp_subver,
++					    "rtl_bt/rtl8821cu_fw.bin");
+ 	case RTL_ROM_LMP_8761A:
+ 		return btrtl_setup_rtl8723b(hdev, lmp_subver,
+ 					    "rtl_bt/rtl8761a_fw.bin");

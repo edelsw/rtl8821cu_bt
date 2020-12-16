@@ -1,0 +1,63 @@
+Cross-building the github driver rtk_bt_usb
+===========================================
+
+$ cd bluetooth_usb_driver
+Edit paths to kernel sources and cross-development tools in the Makefile.
+$ make
+Transfer the firwmare files rtl8821cu_config, rtl8821cu_fw, and the 
+driver rtk_btusb.ko to target.
+
+Install the module on target:
+cp rtk_btusb.ko /lib/modules/$(uname -r)/kernel/drivers/bluetooth
+depmod -a $(uname -r)
+
+You may need to blacklist the original btusb module in
+/etc/modprobe.d/blacklist.conf, as it can claim RTL8821CU.
+
+[/etc/modprobe.d/blacklist.conf]
+blacklist btusb
+
+TBD There may be a more elegant way of binding rtk_btusb to the device,
+without blocking btusb for other devices.
+
+Load and test the driver:
+
+modprobe rtk_btusb
+hciconfig
+
+hci0:	Type: Primary  Bus: USB
+	BD Address: C4:3A:35:6D:54:4F  ACL MTU: 1021:8  SCO MTU: 255:12
+	UP RUNNING PSCAN ISCAN 
+	RX bytes:716 acl:0 sco:0 events:52 errors:0
+	TX bytes:3668 acl:0 sco:0 commands:52 errors:0
+
+Turn on the bluetooth on some other device, for ex. a smartphone,
+and put it in discovery mode.
+
+At some point a pairing request will appear on the computer screen.
+Click "confirm".
+
+Discover and ping the other device:
+
+hcitool scan
+l2ping <MAC address of the paired device>
+
+How to use the stock kernel btusb driver
+========================================
+
+Instead of using the github driver, you can modify and use the kernel's standard btusb
+driver. See btrtl.patch
+
+Remove btusb driver from /etc/modprobe.d/blacklist.conf
+Remove the rtk_btusb.ko driver, if you installed it above.
+Once you build the new btrtl.ko driver, copy it to /lib/modules:
+
+cp btrtl.ko /lib/modules/$(uname -r)/kernel/drivers/bluetooth
+depmod -a $(uname -r)
+
+Copy the firmware files from this driver package to the target:
+
+cp rtl8821cu_config /lib/firmware/rtl_bt/rtl8821cu_config.bin
+cp rtl8821cu_fw /lib/firmware/rtl_bt/rtl8821cu_fw.bin
+
+The driver shall be functional after reboot.
